@@ -29,8 +29,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src",
-    "api"
-  ]
+"include": [
+  "api",
+  "components",
+  "hooks",
+  "services",
+  "*.ts",
+  "*.tsx"
+],
 }

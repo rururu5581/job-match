@@ -1,95 +1,44 @@
+import React from 'react';
+// import JobCard from './components/JobCard'; // 求人カードコンポーネントのパスはあなたの構成に合わせてください
+import { useJobData } from './hooks/useJobData'; // 作成したフックをインポート
+import './App.css'; // 必要に応じて
 
-import React, { useState, useCallback } from 'react';
-import { JobSeekerProfile, JobOpening, MatchResult } from './types';
-import { JobSeekerForm } from './components/JobSeekerForm';
-import { ResultsDisplay } from './components/ResultsDisplay';
-import { LoadingSpinner } from './components/LoadingSpinner';
-import { calculateMatchScores } from './services/matchingService';
-import { useMockJobData } from './hooks/useMockJobData';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
+function App() {
+  // フックを使ってCSVからデータを取得
+  const { jobs, isLoading, error } = useJobData();
 
-const App: React.FC = () => {
-  const [jobSeekerProfile, setJobSeekerProfile] = useState<JobSeekerProfile | null>(null);
-  const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { jobOpenings, loading: jobsLoading, error: jobsError } = useMockJobData();
+  // データ読み込み中の表示
+  if (isLoading) {
+    return <div className="loading-message">求人データを読み込み中...</div>;
+  }
 
-  const handleProfileSubmit = useCallback(async (profile: JobSeekerProfile) => {
-    setIsLoading(true);
-    setError(null);
-    setJobSeekerProfile(profile);
-    setMatchResults([]); // Clear previous results
+  // エラーが発生した場合の表示
+  if (error) {
+    return <div className="error-message">エラーが発生しました: {error}</div>;
+  }
 
-    if (jobsError) {
-      setError(`求人情報の読み込みに失敗しました: ${jobsError}`);
-      setIsLoading(false);
-      return;
-    }
-
-    if (!jobOpenings || jobOpenings.length === 0) {
-      setError("求人情報がありません。");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const results = await calculateMatchScores(profile, jobOpenings);
-      // Sort results by total score descending
-      results.sort((a, b) => b.score.total - a.score.total);
-      setMatchResults(results);
-    } catch (e) {
-      console.error("Matching error:", e);
-      setError(e instanceof Error ? e.message : "マッチング処理中にエラーが発生しました。");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [jobOpenings, jobsError]);
-
-  const handleReset = () => {
-    setJobSeekerProfile(null);
-    setMatchResults([]);
-    setError(null);
-  };
-
+  // データを表示
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        {isLoading && <LoadingSpinner />}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">エラー: </strong>
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-        {jobsLoading && !isLoading && <p className="text-center text-gray-600">求人データをロード中...</p>}
-        
-        {!jobSeekerProfile && !isLoading && !jobsLoading && (
-          <JobSeekerForm onSubmit={handleProfileSubmit} />
-        )}
-        
-        {jobSeekerProfile && !isLoading && matchResults.length > 0 && (
-          <ResultsDisplay results={matchResults} onReset={handleReset} />
-        )}
+    <div className="App">
+      <header className="App-header">
+        <h1>求人一覧</h1>
+      </header>
+      <main className="job-list">
+        {jobs.map((job) => (
+          // --- ここで求人カードコンポーネントを呼び出す ---
+          // <JobCard key={job['JOB ID']} job={job} />
 
-        {jobSeekerProfile && !isLoading && matchResults.length === 0 && !error && !jobsLoading && (
-           <div className="text-center py-10">
-            <p className="text-xl text-gray-700 mb-4">該当する求人は見つかりませんでした。</p>
-            <button
-              onClick={handleReset}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out"
-            >
-              再検索する
-            </button>
+          // ↓↓↓ まずは、正しくデータが読み込めているか確認するために、簡単な表示を試しましょう ↓↓↓
+          <div key={job['JOB ID']} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
+            <h2>{job['ポジション']}</h2>
+            <p><strong>企業名:</strong> {job['企業名']}</p>
+            <p><strong>勤務地:</strong> {job['勤務地']}</p>
+            <p><strong>年収:</strong> {job['年収下限 [万円]']}万円 〜 {job['年収上限 [万円] (選択肢型)']}万円</p>
           </div>
-        )}
+        ))}
       </main>
-      <Footer />
     </div>
   );
-};
+}
 
 export default App;
