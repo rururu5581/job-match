@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ★★★【最終修正】★★★
-// APIのバージョンを "v1beta" から、安定版の "v1" に修正します。
-const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
+// モデル名を、より広くサポートされている "gemini-1.0-pro" に変更します。
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent";
 
 export default async function handler(
   req: VercelRequest,
