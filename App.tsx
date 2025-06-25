@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import JobSeekerForm from './components/JobSeekerForm'; // フォームコンポーネント
-import ResultsDisplay from './components/ResultsDisplay'; // 結果表示コンポーネント（後で作る）
-import LoadingSpinner from './components/LoadingSpinner'; // ローディングスピナー
+// ReactからuseStateをインポートする
+import { useState } from 'react'; 
+import { JobSeekerForm } from './components/JobSeekerForm'; // ← { } で囲む
+import ResultsDisplay from './components/ResultsDisplay';  // ← これは default なのでそのままでOK
+import { LoadingSpinner } from './components/LoadingSpinner'; // ← { } で囲む
 import { JobSeekerProfile, JobOpening } from './types';
 import { useJobData } from './hooks/useJobData';
 import { analyzeWorkExperienceMatch } from './services/geminiService'; // APIを叩くサービス
