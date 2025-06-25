@@ -1,4 +1,4 @@
-import React from 'react';
+
 // import JobCard from './components/JobCard'; // 求人カードコンポーネントのパスはあなたの構成に合わせてください
 import { useJobData } from './hooks/useJobData'; // 作成したフックをインポート
 
