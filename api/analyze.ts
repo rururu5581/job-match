@@ -1,8 +1,10 @@
+// import文はすべて削除し、Vercelの型だけを読み込む
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// ★★★【最終奥義】★★★
-// import文を使わず、関数の中で動的にライブラリを読み込む
-// これにより、Vercelのビルド環境のモジュール解釈の混乱を回避する
+// ★★★【最終手段】★★★
+// Node.jsの伝統的な require を使ってライブラリを強制的に読み込む
+// これにより、Vercel環境でのモジュール解決のすべての問題を回避する
+const { GoogleGenerativeAI } = require("@google/genai");
 
 export default async function handler(
   req: VercelRequest,
@@ -19,15 +21,9 @@ export default async function handler(
   }
 
   try {
-    // 1. 関数の中で動的にライブラリを読み込む
-    const genai = await import('@google/genai');
-    
-    // 2. 読み込んだオブジェクトの中から、GoogleGenerativeAIクラスを取り出す
-    const GoogleGenerativeAI = genai.GoogleGenerativeAI;
-
-    // 3. そのクラスを使ってインスタンスを作成する
-    const genAIInstance = new GoogleGenerativeAI(apiKey);
-    const model = genAIInstance.getGenerativeModel({ model: "gemini-pro" });
+    // 読み込んだクラスをそのまま使う
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // --- 以下、変更なし ---
     const { seekerExperience, jobDetails } = req.body;
