@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { JobSeekerForm } from './components/JobSeekerForm';
-import { ResultsDisplay } from './components/ResultsDisplay';
+import ResultsDisplay from './components/ResultsDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { JobSeekerProfile, JobOpening } from './types';
 import { useJobData } from './hooks/useJobData';
