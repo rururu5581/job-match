@@ -1,50 +1,24 @@
-
-import React, { useState } from 'react';
-import { MatchResult, JobOpening } from '../types';
-import { JobCard } from './JobCard';
-import { JobDetailModal } from './JobDetailModal';
+import React from 'react';
+import { JobOpening } from '../types';
 
 interface ResultsDisplayProps {
-  results: MatchResult[];
-  onReset: () => void;
+  matchedJobs: { job: JobOpening, score: number }[];
 }
 
-export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, onReset }) => {
-  const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
-
-  const handleCardClick = (job: JobOpening) => {
-    setSelectedJob(job);
-  };
-
-  const closeModal = () => {
-    setSelectedJob(null);
-  };
-
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ matchedJobs }) => {
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-red-700">マッチング結果</h2>
-        <button
-          onClick={onReset}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out"
-        >
-          再検索する
-        </button>
-      </div>
-      
-      {results.length === 0 ? (
-        <p className="text-center text-gray-600 text-lg py-10">条件に合う求人は見つかりませんでした。</p>
-      ) : (
-        <div className="space-y-6">
-          {results.map(result => (
-            <JobCard key={result.job.id} result={result} onClick={() => handleCardClick(result.job)} />
-          ))}
+    <div>
+      <h1>マッチング結果</h1>
+      {matchedJobs.map(({ job, score }) => (
+        <div key={job['JOB ID']} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
+          <h2>{job['ポジション']} (マッチ度: {score}点)</h2>
+          <p><strong>企業名:</strong> {job['企業名']}</p>
+          <p><strong>勤務地:</strong> {job['勤務地']}</p>
+          <p><strong>年収:</strong> {job['年収下限 [万円]']}万円 〜 {job['年収上限 [万円] (選択肢型)']}万円</p>
         </div>
-      )}
-
-      {selectedJob && (
-        <JobDetailModal job={selectedJob} onClose={closeModal} />
-      )}
+      ))}
     </div>
   );
 };
+
+export default ResultsDisplay;

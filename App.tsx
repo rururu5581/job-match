@@ -1,41 +1,85 @@
-
-// import JobCard from './components/JobCard'; // 求人カードコンポーネントのパスはあなたの構成に合わせてください
-import { useJobData } from './hooks/useJobData'; // 作成したフックをインポート
+import React, { useState } from 'react';
+import JobSeekerForm from './components/JobSeekerForm'; // フォームコンポーネント
+import ResultsDisplay from './components/ResultsDisplay'; // 結果表示コンポーネント（後で作る）
+import LoadingSpinner from './components/LoadingSpinner'; // ローディングスピナー
+import { JobSeekerProfile, JobOpening } from './types';
+import { useJobData } from './hooks/useJobData';
+import { analyzeWorkExperienceMatch } from './services/geminiService'; // APIを叩くサービス
 
 function App() {
-  // フックを使ってCSVからデータを取得
-  const { jobs, isLoading, error } = useJobData();
+  // 'form', 'loading', 'results' の3つの状態を管理
+  const [view, setView] = useState<'form' | 'loading' | 'results'>('form');
+  // CSVから読み込んだ全求人情報
+  const { jobs, isLoading: isLoadingJobs, error: jobsError } = useJobData();
+  // マッチング結果を保存する状態
+  const [matchedJobs, setMatchedJobs] = useState<{ job: JobOpening, score: number }[]>([]);
 
-  // データ読み込み中の表示
-  if (isLoading) {
-    return <div className="loading-message">求人データを読み込み中...</div>;
-  }
+  // フォームが送信されたときの処理
+  const handleFormSubmit = async (seekerProfile: JobSeekerProfile) => {
+    setView('loading'); // ローディング画面に切り替え
 
-  // エラーが発生した場合の表示
-  if (error) {
-    return <div className="error-message">エラーが発生しました: {error}</div>;
-  }
+    const seekerExperience = `
+      保有スキル: ${seekerProfile.skills.join(', ')}
+      希望年収: ${seekerProfile.desiredSalary}万円
+      希望勤務地: ${seekerProfile.desiredLocation}
+      希望業種: ${seekerProfile.desiredIndustry}
+    `;
 
-  // データを表示
+    try {
+      // Promise.allで、全求人に対するAPI呼び出しを並行して実行
+      const scoringPromises = jobs.map(async (job) => {
+        const jobDetails = `
+          ポジション: ${job['ポジション']}
+          業務内容: ${job['業務内容']}
+          応募資格: ${job['応募資格(概要)']} ${job['応募資格(詳細)']}
+        `;
+        // ★注意：geminiService.tsは/api/analyzeを呼び出すように以前修正したはずです
+        // analyzeWorkExperienceMatch は number を返す Promise になっているはず
+        const score = await analyzeWorkExperienceMatch(seekerExperience, jobDetails);
+        return { job, score };
+      });
+
+      const results = await Promise.all(scoringPromises);
+
+      // スコアが高い順に並び替え
+      results.sort((a, b) => b.score - a.score);
+
+      setMatchedJobs(results);
+      setView('results'); // 結果表示画面に切り替え
+
+    } catch (error) {
+      console.error("マッチング処理中にエラーが発生しました:", error);
+      // ここでエラー用の画面表示に切り替えることもできる
+      setView('form'); // とりあえずフォームに戻す
+    }
+  };
+
+  // メインの表示切り替えロジック
+  const renderContent = () => {
+    switch (view) {
+      case 'loading':
+        return <LoadingSpinner />;
+      case 'results':
+        // ResultsDisplayコンポーネントに、マッチング結果を渡す
+        return <ResultsDisplay matchedJobs={matchedJobs} />;
+      case 'form':
+      default:
+        // JobSeekerFormに、送信時の処理を渡す
+        return <JobSeekerForm onSubmit={handleFormSubmit} />;
+    }
+  };
+
+  if (isLoadingJobs) return <div>求人マスターデータを準備中...</div>;
+  if (jobsError) return <div>エラー: {jobsError}</div>;
+
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>求人一覧</h1>
-      </header>
-      <main className="job-list">
-        {jobs.map((job) => (
-          // --- ここで求人カードコンポーネントを呼び出す ---
-          // <JobCard key={job['JOB ID']} job={job} />
-
-          // ↓↓↓ まずは、正しくデータが読み込めているか確認するために、簡単な表示を試しましょう ↓↓↓
-          <div key={job['JOB ID']} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
-            <h2>{job['ポジション']}</h2>
-            <p><strong>企業名:</strong> {job['企業名']}</p>
-            <p><strong>勤務地:</strong> {job['勤務地']}</p>
-            <p><strong>年収:</strong> {job['年収下限 [万円]']}万円 〜 {job['年収上限 [万円] (選択肢型)']}万円</p>
-          </div>
-        ))}
-      </main>
+       <header>
+         {/* ...ヘッダーコンポーネントなど... */}
+       </header>
+       <main>
+         {renderContent()}
+       </main>
     </div>
   );
 }
