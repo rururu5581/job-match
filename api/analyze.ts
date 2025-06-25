@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// ★★★【最重要修正】★★★
-// 正しいクラス名は "GoogleGenerativeAI" です。
-// これまでの私の案内は誤りでした。大変申し訳ありません。
-import { GoogleGenerativeAI } from "@google/genai";
+// ★★★【最終修正】★★★
+// ビルドログのエラーに基づき、正しいクラス名 "GoogleGenAI" に戻します。
+// 私の案内の間違いでした。大変申し訳ありません。
+import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(
   req: VercelRequest,
@@ -19,10 +19,10 @@ export default async function handler(
   }
 
   try {
-    // ★★★【最重要修正】★★★
-    // 正しいクラス名 "GoogleGenerativeAI" を使います。
-    // コンストラクタにはAPIキーの文字列を直接渡すのが公式な使い方です。
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // ★★★【最終修正】★★★
+    // 正しいクラス名 "GoogleGenAI" を使い、
+    // コンストラクタには { apiKey } というオブジェクトを渡します。
+    const genAI = new GoogleGenAI({ apiKey }); 
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const { seekerExperience, jobDetails } = req.body;

@@ -1,59 +1,61 @@
-
 import React, { useState } from 'react';
 
+// TagInputコンポーネントが受け取るプロパティの型
 interface TagInputProps {
-  value: string[];
-  onChange: (tags: string[]) => void;
-  placeholder?: string;
+  tags: string[];
+  setTags: (tags: string[]) => void;
 }
 
-export const TagInput: React.FC<TagInputProps> = ({ value, onChange, placeholder }) => {
+export const TagInput: React.FC<TagInputProps> = ({ tags, setTags }) => {
   const [inputValue, setInputValue] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const newTag = inputValue.trim();
-      if (newTag && !value.includes(newTag)) {
-        onChange([...value, newTag]);
-      }
-      setInputValue('');
-    } else if (e.key === 'Backspace' && inputValue === '' && value.length > 0) {
-      onChange(value.slice(0, -1));
+  // Enterキーが押されたときの処理
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Enterキー以外、または入力が空の場合は何もしない
+    if (e.key !== 'Enter' || !inputValue.trim()) {
+      return;
     }
+    
+    // デフォルトのフォーム送信などを防ぐ
+    e.preventDefault(); 
+    
+    // 新しいタグを既存のタグ一覧に追加
+    setTags([...tags, inputValue.trim()]);
+    
+    // 入力フィールドを空にする
+    setInputValue('');
   };
 
+  // タグの削除ボタンが押されたときの処理
   const removeTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500 transition duration-150">
-        {value.map(tag => (
-          <span key={tag} className="flex items-center bg-red-500 text-white text-sm font-medium px-3 py-1 rounded-full">
+      {/* タグ一覧を表示するエリア */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px', border: '1px solid #ccc', padding: '8px' }}>
+        {tags.map((tag, index) => (
+          <div key={index} style={{ backgroundColor: '#e0e0e0', padding: '5px 10px', borderRadius: '15px', display: 'flex', alignItems: 'center' }}>
             {tag}
-            <button
-              type="button"
+            <button 
+              type="button" // フォームを送信しないように type="button" を指定
               onClick={() => removeTag(tag)}
-              className="ml-2 text-red-100 hover:text-white focus:outline-none"
-              aria-label={`Remove ${tag}`}
+              style={{ marginLeft: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', fontWeight: 'bold' }}
             >
-              &times;
+              x
             </button>
-          </span>
+          </div>
         ))}
+
+        {/* 新しいタグを入力するフィールド */}
         <input
           type="text"
           value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleInputKeyDown}
-          placeholder={value.length === 0 ? placeholder : ""}
-          className="flex-grow p-1 outline-none text-sm"
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="スキルを入力してEnter"
+          style={{ border: 'none', outline: 'none', flexGrow: 1 }}
         />
       </div>
     </div>

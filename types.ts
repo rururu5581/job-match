@@ -1,5 +1,6 @@
 // 候補者の入力情報を扱うための型
 export interface JobSeekerProfile {
+  workExperience: string; // ← この行を追加！
   skills: string[];
   desiredSalary: number | null;
   desiredLocation: string;
