@@ -1,0 +1,5 @@
+{
+  "name": "morich job match",
+  "description": "A web application for morich Co., Ltd. to match job seekers with job openings from a CSV list, visualizing match scores.",
+  "requestFramePermissions": []
+}
