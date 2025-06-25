@@ -4,41 +4,53 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // この診断が実行されたことを示す
-  console.log("--- Ultimate Diagnostic Run ---");
-  console.log("Investigating the '@google/genai' module on Vercel...");
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("API key is not configured.");
+    return res.status(500).json({ error: "API service is not configured." });
+  }
 
   try {
-    // ステップ1: ライブラリを読み込む
-    const googleGenaiLibrary = require("@google/genai");
+    // ★★★【最終修正】★★★
+    // 動的import()で読み込んだモジュールから、
+    // ".default" を経由せず、直接クラスを取得します。
 
-    // ステップ2: 読み込んだライブラリの中身をすべてログに出力する
-    console.log("--- Full content of require('@google/genai') ---");
-    // JSON.stringifyで、オブジェクトの中身を文字列として表示
-    console.log(JSON.stringify(googleGenaiLibrary, null, 2));
-
-    // ステップ3: ライブラリが持っているプロパティの一覧を出力する
-    console.log("--- Keys of the library object ---");
-    console.log(Object.keys(googleGenaiLibrary));
-
-    // ステップ4: 'GoogleGenerativeAI'プロパティの「型」を調べる
-    if (googleGenaiLibrary.GoogleGenerativeAI) {
-      console.log("--- Type of the 'GoogleGenerativeAI' property ---");
-      console.log(typeof googleGenaiLibrary.GoogleGenerativeAI);
-    } else {
-      console.log("--- The 'GoogleGenerativeAI' property does NOT exist. ---");
-    }
+    // 1. 動的にライブラリを読み込む
+    const googleGenaiModule = await import('@google/genai');
     
-    // これ以上の処理は行わず、診断が完了したことを知らせる
-    return res.status(500).json({ 
-      message: "Diagnostic run is complete. Please check the Vercel logs.",
-      libraryKeys: Object.keys(googleGenaiLibrary)
-    });
+    // 2. 読み込んだモジュールから直接 "GoogleGenerativeAI" クラスを取得
+    const GoogleGenerativeAI = googleGenaiModule.GoogleGenerativeAI;
+
+    // 3. そのクラスを使ってインスタンスを作成する
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    // --- 以下、変更なし ---
+    const { seekerExperience, jobDetails } = req.body;
+    if (!seekerExperience || !jobDetails) {
+      return res.status(400).json({ error: 'seekerExperience and jobDetails are required.' });
+    }
+
+    const prompt = `Rate the relevance of the following candidate's work experience to the job description on a scale of 0 to 100. Candidate experience: "${seekerExperience}" Job description (including role, responsibilities, and ideal candidate): "${jobDetails}" Respond with only the numerical score. For example, if the score is 75, respond with "75".`;
+    
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const textResponse = response.text();
+
+    const scoreMatch = textResponse.match(/\d+/);
+    const score = scoreMatch ? parseInt(scoreMatch[0], 10) : 0;
+    
+    if (isNaN(score)) { throw new Error("Parsed score is NaN"); }
+    
+    return res.status(200).json({ score });
 
   } catch (error) {
-    console.error("--- !!! TOP-LEVEL CATCH BLOCK ERROR !!! ---");
-    console.error(error);
+    console.error("Gemini API Error:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ error: `Runtime Error: ${errorMessage}` });
+    return res.status(500).json({ error: `Gemini API Error: ${errorMessage}` });
   }
 }
