@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Gemini APIのエンドポイントURL
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+// ★★★【最終修正】★★★
+// APIのバージョンを "v1beta" から、安定版の "v1" に修正します。
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
 
 export default async function handler(
   req: VercelRequest,
@@ -23,7 +24,6 @@ export default async function handler(
       return res.status(400).json({ error: 'seekerExperience and jobDetails are required.' });
     }
 
-    // Gemini APIに送信するリクエストの本文を作成
     const requestBody = {
       contents: [{
         parts: [{
@@ -32,7 +32,6 @@ export default async function handler(
       }]
     };
 
-    // Node.jsの標準機能である fetch を使って、直接APIを呼び出す
     const apiResponse = await fetch(`${API_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: {
@@ -41,19 +40,14 @@ export default async function handler(
       body: JSON.stringify(requestBody),
     });
 
-    // APIからの応答がエラーだった場合
     if (!apiResponse.ok) {
       const errorData = await apiResponse.json();
       console.error("Google API Error:", errorData);
       throw new Error(errorData.error?.message || 'Google API returned an error.');
     }
 
-    // 成功した場合、応答をJSONとして解析
     const responseData = await apiResponse.json();
-    
-    // APIの応答の中から、AIが生成したテキスト部分を取り出す
     const textResponse = responseData.candidates[0].content.parts[0].text;
-
     const scoreMatch = textResponse.match(/\d+/);
     const score = scoreMatch ? parseInt(scoreMatch[0], 10) : 0;
     
@@ -61,7 +55,6 @@ export default async function handler(
       throw new Error("Parsed score is NaN. AI Response: " + textResponse);
     }
     
-    // 成功！
     return res.status(200).json({ score });
 
   } catch (error) {
