@@ -1,52 +1,44 @@
-// import文はすべて削除し、Vercelの型だけを読み込む
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// ★★★【最終手段】★★★
-// Node.jsの伝統的な require を使ってライブラリを強制的に読み込む
-// これにより、Vercel環境でのモジュール解決のすべての問題を回避する
-const { GoogleGenerativeAI } = require("@google/genai");
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
-  }
-
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.error("API key is not configured.");
-    return res.status(500).json({ error: "API service is not configured." });
-  }
+  // この診断が実行されたことを示す
+  console.log("--- Ultimate Diagnostic Run ---");
+  console.log("Investigating the '@google/genai' module on Vercel...");
 
   try {
-    // 読み込んだクラスをそのまま使う
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // ステップ1: ライブラリを読み込む
+    const googleGenaiLibrary = require("@google/genai");
 
-    // --- 以下、変更なし ---
-    const { seekerExperience, jobDetails } = req.body;
-    if (!seekerExperience || !jobDetails) {
-      return res.status(400).json({ error: 'seekerExperience and jobDetails are required.' });
+    // ステップ2: 読み込んだライブラリの中身をすべてログに出力する
+    console.log("--- Full content of require('@google/genai') ---");
+    // JSON.stringifyで、オブジェクトの中身を文字列として表示
+    console.log(JSON.stringify(googleGenaiLibrary, null, 2));
+
+    // ステップ3: ライブラリが持っているプロパティの一覧を出力する
+    console.log("--- Keys of the library object ---");
+    console.log(Object.keys(googleGenaiLibrary));
+
+    // ステップ4: 'GoogleGenerativeAI'プロパティの「型」を調べる
+    if (googleGenaiLibrary.GoogleGenerativeAI) {
+      console.log("--- Type of the 'GoogleGenerativeAI' property ---");
+      console.log(typeof googleGenaiLibrary.GoogleGenerativeAI);
+    } else {
+      console.log("--- The 'GoogleGenerativeAI' property does NOT exist. ---");
     }
-
-    const prompt = `Rate the relevance of the following candidate's work experience to the job description on a scale of 0 to 100. Candidate experience: "${seekerExperience}" Job description (including role, responsibilities, and ideal candidate): "${jobDetails}" Respond with only the numerical score. For example, if the score is 75, respond with "75".`;
     
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const textResponse = response.text();
-
-    const scoreMatch = textResponse.match(/\d+/);
-    const score = scoreMatch ? parseInt(scoreMatch[0], 10) : 0;
-    
-    if (isNaN(score)) { throw new Error("Parsed score is NaN"); }
-    
-    return res.status(200).json({ score });
+    // これ以上の処理は行わず、診断が完了したことを知らせる
+    return res.status(500).json({ 
+      message: "Diagnostic run is complete. Please check the Vercel logs.",
+      libraryKeys: Object.keys(googleGenaiLibrary)
+    });
 
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("--- !!! TOP-LEVEL CATCH BLOCK ERROR !!! ---");
+    console.error(error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ error: `Gemini API Error: ${errorMessage}` });
+    return res.status(500).json({ error: `Runtime Error: ${errorMessage}` });
   }
 }
